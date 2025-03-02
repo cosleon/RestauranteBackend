@@ -97,8 +97,25 @@ public class ReservaController {
 
     /**borrar*/
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteMesa(@PathVariable Long id) {
-        reservaRepository.deleteById(id);
+    public ResponseEntity<Void> deleteMesa(@PathVariable Long id, Authentication authentication) {
+        String username = authentication.getName();  // Obtener el nombre de usuario desde el JWT
+        UserEntity user = userRepository.findByUsername(username).orElse(null);
+
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
+        Cliente cliente = clienteRepository.findClienteByUserId(user.getId());
+        if (cliente == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+
+        Reserva reserva = reservaRepository.findById(id).orElse(null);;
+        if(reserva.getCliente().getId()==cliente.getId()){
+            reservaRepository.delete(reserva);
+        }else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
         return ResponseEntity.noContent().build();
     }
 }
